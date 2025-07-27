@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1">
+
+		<title>
+			Kairianu Library
+		</title>
+
+		<style>
+			:root {
+				background-color: hsl(0, 0%, 5%);
+				color: hsl(0, 0%, 95%);
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			a {
+				color: hsl(200, 95%, 50%);
+			}
+		</style>
+	</head>
+	<body>
+		<h3>
+			JavaScript
+		</h3>
+		<ul id="javascriptLinks"></ul>
+
+		<script>
+			const repositoryName = 'library';
+
+			function getFullRepositoryURL(path) {
+				return `/${repositoryName}/${path}`;
+			}
+
+			const javascriptURLs = [
+				'javascript/object/base.mjs',
+			];
+
+			javascriptURLs.sort();
+
+			const javascriptLinksContainer = document.querySelector('#javascriptLinks');
+
+			for ( const javascriptURL of javascriptURLs ) {
+				const aElement = document.createElement('a');
+				aElement.href = getFullRepositoryURL(javascriptURL);
+				aElement.innerText = javascriptURL;
+
+				const liElement = document.createElement('li');
+				liElement.append(aElement);
+
+				javascriptLinksContainer.append(liElement);
+			}
+		</script>
+	</body>
+</html>
