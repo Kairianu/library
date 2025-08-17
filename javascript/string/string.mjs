@@ -20,7 +20,7 @@ export function isString(value) {
 	return false;
 }
 
-export function shouldUseAsString(value) {
+export function shouldUseAsKey(value) {
 	if ( isNonEmptyString(value) ) {
 		return true;
 	}
