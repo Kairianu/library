@@ -1,166 +1,179 @@
+import * as websocket from './socket.mjs';
 import * as websocketMessage from './message.mjs';
 
-import { EventWebSocket } from './socket.mjs';
+
+const routerSockets = new WeakMap();
 
 
-export class EventWebSocketsRouter {
-	static peerConnectedEventName = 'peerConnected';
-	static peerDisconnectedEventName = 'peerDisconnected';
-
-
-
-	#messageEvents = new websocketMessage.MessageEvents();
-	#sockets = {};
-
-	sendPeerConnectedEvent = false;
-	sendPeerDisconnectedEvent = false;
-
-
-	addSocket(...args) {
-		const socket = new EventWebSocket(...args);
-
-		socket.addEventListener('close', this.handleSocketClose.bind(this, socket));
-		socket.addEventListener('open', this.handleSocketOpen.bind(this, socket));
-
-		return socket;
+function handleSocketClose(router, socket) {
+	if ( router.sendPeerDisconnectedEvent ) {
+		sendEventToAllPeers(router, socket, router.peerDisconnectedEventName);
 	}
 
-	addSocketFromRequest(request) {
-		const socketInfo = Deno.upgradeWebSocket(request);
+	const socketID = getSocketID(router, socket);
 
-		const socket = this.addSocket(socketInfo.socket);
+	delete router.sockets[socketID];
 
-		return {
-			response: socketInfo.response,
-			socket,
-		};
+	routerSockets.delete(socket);
+}
+
+function handleSocketOpen(router, socket) {
+	if ( routerSockets.has(socket) ) {
+		return;
 	}
 
-	getHTTPResponse(request) {
-		const socketInfo = this.addSocketFromRequest(request);
+	const socketID = getNewSocketID();
 
-		return socketInfo.response;
+	router.sockets[socketID] = socket;
+
+	routerSockets.set(socket, router);
+
+	socket.addEventListener('close', handleSocketClose.bind(undefined, router, socket));
+
+	if ( router.sendPeerConnectedEvent ) {
+		sendEventToAllPeers(router, socket, router.peerConnectedEventName);
+	}
+}
+
+
+
+export function getNewRouter() {
+	const router = {
+		peerConnectedEventName: 'peerConnected',
+		peerDisconnectedEventName: 'peerDisconnected',
+		sendPeerConnectedEvent: false,
+		sendPeerDisconnectedEvent: false,
+		sockets: {},
+	};
+
+	return router;
+}
+
+export function getNewSocketID() {
+	return crypto.randomUUID();
+}
+
+export function getRouterForSocket(socket) {
+	return routerSockets.get(socket);
+}
+
+
+
+export function addSocket(router, socket) {
+	if ( ! (socket instanceof WebSocket) ) {
+		throw new TypeError(
+			'Socket must be an instance of WebSocket.'
+		)
 	}
 
-	getMessageEventHandler(...args) {
-		return this.#messageEvents.getMessageEventHandler(...args);
+	const socketReadyState = socket?.readyState;
+
+	if ( socketReadyState == WebSocket.CONNECTING ) {
+		socket.addEventListener('open', handleSocketOpen.bind(undefined, router, socket));
+	}
+	else if ( socketReadyState == WebSocket.OPEN ) {
+		handleSocketOpen(router, socket);
+	}
+	else {
+		return false;
 	}
 
-	getPeerMessageData(currentSocket, additionalMessageData) {
-		const messageData = websocketMessage.getMessageData(additionalMessageData);
+	return true;
+}
 
-		messageData.peerID = this.getSocketID(currentSocket);
+export function addSocketFromRequest(router, request) {
+	const upgradeSocketInfo = Deno.upgradeWebSocket(request);
 
-		return messageData;
+	const socketAdded = addSocket(router, upgradeSocketInfo.socket);
+
+	const socketInfo = {
+		socketAdded,
+	};
+
+	Object.assign(socketInfo, upgradeSocketInfo);
+
+	return socketInfo;
+}
+
+export function closeAllSockets(router) {
+	for ( const socket of Object.values(router.sockets) ) {
+		socket.close();
 	}
+}
 
-	getSocket(socketID) {
-		return this.#sockets[socketID];
-	}
+export function getHTTPResponse(router, request) {
+	const socketInfo = addSocketFromRequest(router, request);
 
-	getSocketID(socket) {
-		return socket?.id;
-	}
+	websocket.setupWebSocket(socketInfo.socket);
 
-	handleSocketClose(socket) {
-		if ( this.sendPeerDisconnectedEvent ) {
-			this.sendEventToAllPeers(socket, this.constructor.peerDisconnectedEventName);
-		}
+	return socketInfo.response;
+}
 
-		const socketID = this.getSocketID(socket);
+export function getPeerMessageData(router, currentSocket, additionalMessageData) {
+	const messageData = websocketMessage.getMessageData(additionalMessageData);
 
-		delete this.#sockets[socketID];
+	messageData.peerID = getSocketID(router, currentSocket);
 
-		socket.router = undefined;
-	}
+	return messageData;
+}
 
-	handleSocketOpen(socket) {
-		const socketID = this.getSocketID(socket);
-
-		const sockets = this.#sockets;
-
-		if ( sockets[socketID] ) {
-			socket.close(EventWebSocket.closeCodesInfo.badID);
-
-			return;
-		}
-
-		sockets[socketID] = socket;
-
-		socket.router = this;
-
-		if ( this.sendPeerConnectedEvent ) {
-			this.sendEventToAllPeers(socket, this.constructor.peerConnectedEventName);
-		}
-	}
-
-	relayEventToAllPeers(currentSocket, receivedMessageData) {
-		this.sendEventToAllPeers(
-			currentSocket,
-			receivedMessageData?.messageEvent,
-			receivedMessageData
-		);
-	}
-
-	relayEventToPeer(currentSocket, receivedMessageData) {
-		return this.sendEventToPeer(
-			currentSocket,
-			receivedMessageData?.peerID,
-			receivedMessageData?.messageEvent,
-			receivedMessageData
-		);
-	}
-
-	removeMessageEvent(...args) {
-		return this.#messageEvents.removeMessageEvent(...args);
-	}
-
-	sendEventToAll(messageEvent, messageData, excludedSocketIDs) {
-		if ( ! (excludedSocketIDs instanceof Set) ) {
-			let setConstructorArg;
-
-			if ( Array.isArray(excludedSocketIDs) ) {
-				setConstructorArg = excludedSocketIDs
-			}
-			else {
-				setConstructorArg = [excludedSocketIDs];
-			}
-
-			excludedSocketIDs = new Set(setConstructorArg);
-		}
-
-		for ( const [socketID, socket] of Object.entries(this.#sockets) ) {
-			if ( excludedSocketIDs.has(socketID) ) {
-				continue;
-			}
-
-			socket.sendEvent(messageEvent, messageData);
+export function getSocketID(router, socket) {
+	for ( const [socketID, routerSocket] of Object.entries(router.sockets) ) {
+		if ( Object.is(routerSocket, socket) ) {
+			return socketID;
 		}
 	}
+}
 
-	sendEventToAllPeers(currentSocket, messageEvent, additionalMessageData) {
-		const currentSocketID = this.getSocketID(currentSocket);
+export function relayEventToAllPeers(router, currentSocket, receivedMessageData) {
+	sendEventToAllPeers(
+		router,
+		currentSocket,
+		receivedMessageData?.messageEvent,
+		receivedMessageData
+	);
+}
 
-		const messageData = this.getPeerMessageData(currentSocket, additionalMessageData);
+export function relayEventToPeer(router, currentSocket, receivedMessageData) {
+	return sendEventToPeer(
+		router,
+		currentSocket,
+		receivedMessageData?.peerID,
+		receivedMessageData?.messageEvent,
+		receivedMessageData
+	);
+}
 
-		this.sendEventToAll(messageEvent, messageData, currentSocketID);
+export function sendEventToAll(router, messageEvent, messageData, excludedSockets) {
+	if ( ! Array.isArray(excludedSockets) ) {
+		excludedSockets = [excludedSockets];
 	}
 
-	sendEventToPeer(currentSocket, peerSocketID, messageEvent, additionalMessageData) {
-		const peerSocket = this.getSocket(peerSocketID);
-
-		if ( ! peerSocket ) {
-			return false;
+	for ( const socket of Object.values(router.sockets) ) {
+		if ( excludedSockets.includes(socket) ) {
+			continue;
 		}
 
-		const messageData = this.getPeerMessageData(currentSocket, additionalMessageData);
+		websocket.sendEvent(socket, messageEvent, messageData);
+	}
+}
 
-		peerSocket.sendEvent(messageEvent, messageData);
+export function sendEventToAllPeers(router, currentSocket, messageEvent, additionalMessageData) {
+	const messageData = getPeerMessageData(router, currentSocket, additionalMessageData);
 
-		return true;
+	sendEventToAll(router, messageEvent, messageData, currentSocket);
+}
+
+export function sendEventToPeer(router, currentSocket, peerSocketID, messageEvent, additionalMessageData) {
+	const peerSocket = router.sockets[peerSocketID];
+
+	if ( ! peerSocket ) {
+		return false;
 	}
 
-	setMessageEvent(...args) {
-		return this.#messageEvents.setMessageEvent(...args);
-	}
+	const messageData = getPeerMessageData(router, currentSocket, additionalMessageData);
+
+	websocket.sendEvent(peerSocket, messageEvent, messageData);
+
+	return true;
 }

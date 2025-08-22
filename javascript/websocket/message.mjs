@@ -2,6 +2,22 @@ import * as functions from '../function/function.mjs';
 import * as object from '../object/object.mjs';
 
 
+const ownersMessageEvents = new WeakMap();
+
+function getOwnerMessageEvents(owner) {
+	let ownerMessageEvents = ownersMessageEvents.get(owner);
+
+	if ( ! ownerMessageEvents ) {
+		ownerMessageEvents = {};
+
+		ownersMessageEvents.set(owner, ownerMessageEvents);
+	}
+
+	return ownerMessageEvents;
+}
+
+
+
 export function getEventMessageData(messageEvent, additionalMessageData) {
 	const messageData = getMessageData(additionalMessageData);
 
@@ -25,31 +41,30 @@ export function getMessageData(additionalMessageData) {
 
 
 
-export class MessageEvents {
-	#messageEvents = {};
+export function getMessageEventHandler(owner, name) {
+	const messageEvents = getOwnerMessageEvents(owner);
 
+	return messageEvents[name];
+}
 
-	getMessageEventHandler(name) {
-		return this.#messageEvents[name];
+export function removeMessageEvent(owner, name) {
+	const messageEvents = getOwnerMessageEvents(owner);
+
+	if ( Object.hasOwn(messageEvents, name) ) {
+		return delete messageEvents[name];
 	}
 
-	removeMessageEvent(name) {
-		const messageEvents = this.#messageEvents;
+	return false;
+}
 
-		if ( Object.hasOwn(messageEvents, name) ) {
-			return delete messageEvents[name];
-		}
-
+export function setMessageEvent(owner, name, handler) {
+	if ( ! functions.isFunction(handler) ) {
 		return false;
 	}
 
-	setMessageEvent(name, handler) {
-		if ( ! functions.isFunction(handler) ) {
-			return false;
-		}
+	const messageEvents = getOwnerMessageEvents(owner);
 
-		this.#messageEvents[name] = handler;
+	messageEvents[name] = handler;
 
-		return true;
-	}
+	return true;
 }
