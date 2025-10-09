@@ -29,11 +29,13 @@ export function getEventMessageData(messageEvent, additionalMessageData) {
 export function getMessageData(additionalMessageData) {
 	const messageData = {};
 
-	if ( object.shouldUseProperties(additionalMessageData) ) {
-		Object.assign(messageData, additionalMessageData);
-	}
-	else if ( additionalMessageData != undefined ) {
-		messageData.data = additionalMessageData;
+	if ( additionalMessageData != undefined ) {
+		if ( object.shouldUseProperties(additionalMessageData) ) {
+			Object.assign(messageData, additionalMessageData);
+		}
+		else {
+			messageData.data = additionalMessageData;
+		}
 	}
 
 	return messageData;

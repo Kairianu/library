@@ -1,3 +1,5 @@
+import * as event from '../event/event.mjs';
+
 import * as websocket from './socket.mjs';
 import * as websocketMessage from './message.mjs';
 
@@ -125,22 +127,26 @@ export function getSocketID(router, socket) {
 	}
 }
 
-export function relayEventToAllPeers(router, currentSocket, receivedMessageData) {
+export function relayEventToAllPeers(router, currentSocketOrEvent, messageData) {
+	const currentSocket = event.getCurrentTarget(currentSocketOrEvent);
+
 	sendEventToAllPeers(
 		router,
 		currentSocket,
-		receivedMessageData?.messageEvent,
-		receivedMessageData
+		messageData?.messageEvent,
+		messageData
 	);
 }
 
-export function relayEventToPeer(router, currentSocket, receivedMessageData) {
+export function relayEventToPeer(router, currentSocketOrEvent, messageData) {
+	const currentSocket = event.getCurrentTarget(currentSocketOrEvent);
+
 	return sendEventToPeer(
 		router,
 		currentSocket,
-		receivedMessageData?.peerID,
-		receivedMessageData?.messageEvent,
-		receivedMessageData
+		messageData?.peerID,
+		messageData?.messageEvent,
+		messageData
 	);
 }
 

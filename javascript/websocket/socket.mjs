@@ -1,4 +1,5 @@
 import * as functions from '../function/function.mjs';
+import * as object from '../object/object.mjs';
 
 import * as websocketMessage from './message.mjs';
 import * as websocketRouter from './router.mjs';
@@ -36,22 +37,38 @@ export function getMessageEventHandler(socket, ...args) {
 }
 
 export function handleMessage(event) {
+	const messageData = parseMessageData(event.data);
+
+	if ( ! messageData ) {
+		return;
+	}
+
+	const currentSocket = event.currentTarget;
+
+	const messageEvent = messageData.messageEvent;
+
+	const messageEventHandler = getMessageEventHandler(currentSocket, messageEvent);
+
+	if ( functions.isFunction(messageEventHandler) ) {
+		messageEventHandler(event, messageData);
+	}
+}
+
+export function parseMessageData(value) {
 	let messageData;
 
 	try {
-		messageData = JSON.parse(event.data);
+		messageData = JSON.parse(value);
 	}
 	catch {
 		return;
 	}
 
-	const messageEvent = messageData.messageEvent;
-
-	const messageEventHandler = getMessageEventHandler(event.currentTarget, messageEvent);
-
-	if ( functions.isFunction(messageEventHandler) ) {
-		messageEventHandler(event, messageData);
+	if ( ! object.isObject(messageData) ) {
+		return;
 	}
+
+	return messageData;
 }
 
 export function sendEvent(socket, ...args) {
