@@ -3,59 +3,137 @@
 	<head>
 		<meta name="viewport" content="initial-scale=1">
 
-		<title>
-			Kairianu Library
-		</title>
-
 		<style>
 			:root {
 				background-color: hsl(0, 0%, 5%);
 				color: hsl(0, 0%, 95%);
 			}
 
+			body {
+				display: flex;
+				flex-direction: column;
+				margin: 0;
+			}
+
+
 			* {
 				box-sizing: border-box;
 			}
 
+
 			a {
 				color: hsl(200, 95%, 50%);
+			}
+
+			a:visited {
+				color: hsl(280, 95%, 50%);
+			}
+
+
+			.category-container {
+				display: flex;
+				flex-direction: column;
+				margin: auto;
+				max-width: 800px;
+				padding: 1rem;
+			}
+
+			.category-list {
+				margin: 0;
+			}
+
+			.category-title {
+				margin: 1rem 0;
 			}
 		</style>
 	</head>
 	<body>
-		<h3>
-			JavaScript
-		</h3>
-		<ul id="javascriptLinks"></ul>
+		<script type="module">
+			function formatTitle(value) {
+				if ( value.toLowerCase() == 'javascript' ) {
+					return 'JavaScript';
+				}
 
-		<script>
-			const repositoryName = 'library';
-
-			function getFullRepositoryURL(path) {
-				return `/${repositoryName}/${path}`;
+				return value.replace(
+					/\w\S*/g,
+					text => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
+				);
 			}
 
-			const javascriptURLs = [
-				'javascript/file/mediaType.mjs',
-				'javascript/network/address/ipv4.mjs',
-				'javascript/network/listeners/tcp/secure.mjs',
-				'javascript/network/port.mjs',
-				'javascript/object/base.mjs',
-			];
 
-			javascriptURLs.sort();
+			const locationURL = new URL(window.location.href);
 
-			const javascriptLinksContainer = document.querySelector('#javascriptLinks');
+			const repositoryBasePath = locationURL.pathname;
+			const repositoryName = locationURL.pathname.split('/')[1];
+			const repositoryOwner = locationURL.hostname.split('.')[0];
 
-			for ( const javascriptURL of javascriptURLs ) {
-				const aElement = document.createElement('a');
-				aElement.href = getFullRepositoryURL(javascriptURL);
-				aElement.innerText = javascriptURL;
+			document.title = formatTitle(repositoryName) + ' · ' + formatTitle(repositoryOwner);
 
-				const liElement = document.createElement('li');
-				liElement.append(aElement);
+			const repositoryInfoURL = `https://api.github.com/repos/${repositoryOwner}/${repositoryName}`;
 
-				javascriptLinksContainer.append(liElement);
+			const repositoryInfoRequest = await fetch(repositoryInfoURL);
+
+			const repositoryInfo = await repositoryInfoRequest.json();
+
+			const repositoryTreeURL = `${repositoryInfoURL}/git/trees/${repositoryInfo.default_branch}?recursive=true`;
+
+			const repositoryTreeRequest = await fetch(repositoryTreeURL);
+
+			const repositoryTreeInfo = await repositoryTreeRequest.json();
+
+
+			const categories = {};
+
+			for ( const branchInfo of repositoryTreeInfo.tree ) {
+				const branchPath = branchInfo.path;
+
+				if ( branchPath == 'index.html' ) {
+					continue;
+				}
+
+				const branchType = branchInfo.type;
+
+				if ( branchType != 'blob' ) {
+					continue;
+				}
+
+				const baseBranchPath = branchPath.split('/')[0];
+
+				let category = categories[baseBranchPath];
+
+				if ( ! category ) {
+					category = categories[baseBranchPath] = [];
+				}
+
+				category.push(branchPath);
+			}
+
+
+			for ( const [category, categoryPaths] of Object.entries(categories) ) {
+				const categoryContainer = document.createElement('div');
+				categoryContainer.classList.add('category-container');
+
+				const categoryTitleElement = document.createElement('h2');
+				categoryTitleElement.classList.add('category-title');
+				categoryTitleElement.innerText = formatTitle(category);
+				categoryContainer.append(categoryTitleElement);
+
+				const categoryListElement = document.createElement('ul');
+				categoryListElement.classList.add('category-list');
+
+				for ( const categoryPath of categoryPaths ) {
+					const categoryPathAnchorElement = document.createElement('a');
+					categoryPathAnchorElement.href = repositoryBasePath + categoryPath;
+					categoryPathAnchorElement.innerText = categoryPath;
+
+					const categoryListChildElement = document.createElement('li');
+					categoryListChildElement.append(categoryPathAnchorElement);
+					categoryListElement.append(categoryListChildElement);
+				}
+
+				categoryContainer.append(categoryListElement);
+
+				document.body.append(categoryContainer);
 			}
 		</script>
 	</body>
