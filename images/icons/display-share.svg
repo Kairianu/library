@@ -1,0 +1,166 @@
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+
+	viewBox="-2 -12.5 104 77.5"
+
+	class="svg_displayShareIcon"
+	fill="#0000"
+	stroke="var(--color)"
+	stroke-linecap="round"
+	stroke-linejoin="round"
+	stroke-width="var(--stroke-width)"
+>
+	<style>
+		.svg_displayShareIcon {
+			--color: currentColor;
+
+
+			--stroke-width: 4px;
+
+			--stroke-width--100: calc(var(--stroke-width) + 1px);
+			--stroke-width--200: calc(var(--stroke-width) + 2px);
+			--stroke-width--300: calc(var(--stroke-width) * 3);
+		}
+
+
+		.svg_displayShareIcon-active {
+			.svg_displayShareIcon_active {
+				opacity: 1;
+			}
+		}
+
+		.svg_displayShareIcon-blocked {
+			.svg_displayShareIcon_blocked {
+				opacity: 1;
+			}
+
+			.svg_displayShareIcon_share {
+				opacity: 0;
+			}
+		}
+
+		.svg_displayShareIcon-error {
+			.svg_displayShareIcon_error {
+				opacity: 1;
+			}
+
+			.svg_displayShareIcon_share {
+				opacity: 0;
+			}
+		}
+	</style>
+
+	<g class="svg_displayShareIcon_core">
+		<path
+			class="svg_displayShareIcon_frame"
+			d="
+				M 40 0
+				H 5
+				q -5 0, -5 5
+				v 50
+				q 0 5, 5 5
+				h 90
+				q 5 0, 5 -5
+				v -50
+				q 0 -5, -5 -5
+				h -5
+			"
+		/>
+		<path
+			class="svg_displayShareIcon_stand"
+			d="
+				M 25 60
+				v 1.5
+				q 0 1.5, 1.5 1.5
+				h 47
+				q 1.5 0, 1.5 -1.5
+				v -1.5
+			"
+		/>
+		<g
+			class="svg_displayShareIcon_share"
+			stroke-width="var(--stroke-width--100)"
+		>
+			<path
+				class="svg_displayShareIcon_share_chevron1"
+				d="
+					M 45 10
+					l 20 -20
+					l 20 20
+				"
+			/>
+			<path
+				class="svg_displayShareIcon_share_chevron2"
+				d="
+					M 45 25
+					l 20 -20
+					l 20 20
+				"
+			/>
+		</g>
+	</g>
+
+
+	<g
+		class="svg_displayShareIcon_active"
+		opacity="0"
+	>
+		<g class="svg_displayShareIcon_active_user">
+			<path
+				class="svg_displayShareIcon_active_user_head"
+				stroke-width="var(--stroke-width--300)"
+				d="M 65 31 Z"
+			/>
+			<path
+				class="svg_displayShareIcon_active_user_body"
+				fill="var(--color)"
+				d="
+					M 49 52
+					q 4 -10, 16 -10
+					q 12 0, 16 10
+					Z
+				"
+			/>
+		</g>
+	</g>
+
+	<g
+		class="svg_displayShareIcon_blocked"
+		stroke-width="var(--stroke-width--100)"
+		opacity="0"
+	>
+		<path
+			class="svg_displayShareIcon_blocked_backslash"
+			d="
+				M 47.5 -10
+				l 35 35
+			"
+		/>
+		<path
+			class="svg_displayShareIcon_blocked_slash"
+			d="
+				M 47.5 25
+				l 35 -35
+			"
+		/>
+	</g>
+
+	<g
+		class="svg_displayShareIcon_error"
+		stroke-width="var(--stroke-width--100)"
+		opacity="0"
+	>
+		<path
+			class="svg_displayShareIcon_error_line"
+			d="
+				M 65 -10
+				v 30
+			"
+		/>
+		<path
+			class="svg_displayShareIcon_error_dot"
+			stroke-width="var(--stroke-width--200)"
+			d="M 65 31.5 Z"
+		/>
+	</g>
+</svg>

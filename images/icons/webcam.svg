@@ -1,0 +1,176 @@
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+
+	viewBox="-2 -2 104 57"
+
+	class="svg_webcamIcon"
+	fill="#0000"
+	stroke="var(--color)"
+	stroke-linecap="round"
+	stroke-linejoin="round"
+	stroke-width="var(--stroke-width)"
+>
+	<style>
+		.svg_webcamIcon {
+			--color: currentColor;
+
+			--stroke-width: 4px;
+			--stroke-width--100: calc(var(--stroke-width) + 1px);
+			--stroke-width--200: calc(var(--stroke-width) * 2.5);
+
+
+			--mask-color--hidden: #fff;
+			--mask-color--visible: #000;
+
+			--mask-color: var(--mask-color--hidden);
+		}
+
+
+		.svg_webcamIcon-active {
+			.svg_webcamIcon_lensMask_active {
+				--mask-color: var(--mask-color--visible);
+			}
+
+			.svg_webcamIcon_lens {
+				fill: var(--color);
+				mask: url('#svg_webcamIcon_lensMask_active');
+			}
+		}
+
+		.svg_webcamIcon-blocked {
+			.svg_webcamIcon_lensMask_blocked {
+				--mask-color: var(--mask-color--visible);
+			}
+
+			.svg_webcamIcon_lens {
+				fill: var(--color);
+				mask: url('#svg_webcamIcon_lensMask_blocked');
+			}
+		}
+
+		.svg_webcamIcon-error {
+			.svg_webcamIcon_lensMask_error {
+				--mask-color: var(--mask-color--visible);
+			}
+
+			.svg_webcamIcon_lens {
+				fill: var(--color);
+				mask: url('#svg_webcamIcon_lensMask_error');
+			}
+		}
+	</style>
+
+
+	<defs>
+		<rect
+			id="svg_webcamIcon_mask_backdrop"
+			x="0"
+			y="0"
+			width="100%"
+			height="100%"
+			fill="#fff"
+			stroke="#fff"
+			stroke-linejoin="initial"
+		/>
+
+		<mask
+			id="svg_webcamIcon_lensMask_active"
+			class="svg_webcamIcon_lensMask_active"
+			stroke="var(--mask-color)"
+		>
+			<use href="#svg_webcamIcon_mask_backdrop"/>
+			<path
+				class="svg_webcamIcon_lensMask_active_head"
+				stroke-width="var(--stroke-width--200)"
+				d="M 50 14.5 Z"
+			/>
+			<path
+				class="svg_webcamIcon_lensMask_active_body"
+				fill="var(--mask-color)"
+				d="
+					M 39 30.5
+					q 2 -7, 11 -7
+					q 9 0, 11 7
+					Z
+				"
+			/>
+		</mask>
+
+		<mask
+			id="svg_webcamIcon_lensMask_blocked"
+			class="svg_webcamIcon_lensMask_blocked"
+			stroke="var(--mask-color)"
+		>
+			<use href="#svg_webcamIcon_mask_backdrop"/>
+			<path
+				class="svg_webcamIcon_lensMask_blocked_backslash"
+				d="
+					M 41 13.5
+					l 18 18
+				"
+			/>
+			<path
+				class="svg_webcamIcon_lensMask_blocked_slash"
+				d="
+					M 41 31.5
+					l 18 -18
+				"
+			/>
+		</mask>
+
+		<mask
+			id="svg_webcamIcon_lensMask_error"
+			class="svg_webcamIcon_lensMask_error"
+			stroke="var(--mask-color)"
+		>
+			<use href="#svg_webcamIcon_mask_backdrop"/>
+			<path
+				class="svg_webcamIcon_lensMask_error_line"
+				d="
+					M 50 11.5
+					v 14
+				"
+			/>
+			<path
+				class="svg_webcamIcon_lensMask_error_dot"
+				stroke-width="var(--stroke-width--100)"
+				d="M 50 33 Z"
+			/>
+		</mask>
+	</defs>
+
+
+	<g class="svg_webcamIcon_core">
+		<path
+			class="svg_webcamIcon_body"
+			d="
+				M 22.5 0
+				q -22.5 0, -22.5 22.5
+				q 0 22.5, 22.5 22.5
+				h 55
+				q 22.5 0, 22.5 -22.5
+				q 0 -22.5, -22.5 -22.5
+				Z
+			"
+		/>
+		<path
+			class="svg_webcamIcon_lens"
+			d="
+				M 50 7.5
+				q -15 0, -15 15
+				q 0 15, 15 15
+				q 15 0, 15 -15
+				q 0 -15, -15 -15
+			"
+		/>
+		<path
+			class="svg_webcamIcon_stand"
+			d="
+				M 29 45
+				l -4 8
+				h 50
+				l -4 -8
+			"
+		/>
+	</g>
+</svg>

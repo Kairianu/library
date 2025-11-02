@@ -1,0 +1,121 @@
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+
+	viewBox="19 -2 62 104"
+
+	class="svg_microphoneIcon"
+	fill="#0000"
+	stroke="var(--color)"
+	stroke-linecap="round"
+	stroke-width="var(--stroke-width)"
+>
+	<style>
+		.svg_microphoneIcon {
+			--color: currentColor;
+
+
+			--stroke-width: 4px;
+
+			--stroke-width--100: calc(var(--stroke-width) + 1px);
+		}
+
+
+		.svg_microphoneIcon-active {
+			.svg_microphoneIcon_body {
+				fill: var(--color);
+			}
+		}
+
+		.svg_microphoneIcon-blocked {
+			.svg_microphoneIcon_blocked {
+				opacity: 1;
+			}
+		}
+
+		.svg_microphoneIcon-error {
+			.svg_microphoneIcon_error {
+				opacity: 1;
+			}
+		}
+	</style>
+
+
+	<g class="svg_microphoneIcon_core">
+		<path
+			class="svg_microphoneIcon_body"
+			d="
+				M 50 0
+				q -22 0, -22 22
+				v 22
+				q 0 22, 22 22
+				q 22 0, 22 -22
+				v -22
+				q 0 -22, -22 -22
+			"
+		/>
+		<path
+			class="svg_microphoneIcon_swivel"
+			d="
+				M 21 45
+				q 0 29, 29 29
+				q 29 0, 29 -29
+			"
+		/>
+		<g class="svg_microphoneIcon_stand">
+			<path
+				class="svg_microphoneIcon_stand_vertical"
+				d="
+					M 50 81
+					v 12
+				"
+			/>
+			<path
+				class="svg_microphoneIcon_stand_horizontal"
+				d="
+					M 40 100
+					h 20
+				"
+			/>
+		</g>
+	</g>
+
+
+	<g
+		class="svg_microphoneIcon_blocked"
+		opacity="0"
+	>
+		<path
+			class="svg_microphoneIcon_blocked_backslash"
+			d="
+				M 38 16
+				l 24 34
+			"
+		/>
+		<path
+			class="svg_microphoneIcon_blocked_slash"
+			d="
+				M 38 50
+				l 24 -34
+			"
+		/>
+	</g>
+
+
+	<g
+		class="svg_microphoneIcon_error"
+		opacity="0"
+	>
+		<path
+			class="svg_microphoneIcon_error_line"
+			d="
+				M 50 14
+				v 27
+			"
+		/>
+		<path
+			class="svg_microphoneIcon_error_dot"
+			stroke-width="var(--stroke-width--100)"
+			d="M 50 51.5 Z"
+		/>
+	</g>
+</svg>
