@@ -5,6 +5,7 @@ const jpegMediaType = 'image/jpeg';
 
 export const imageMediaTypes = {
 	gif: 'image/gif',
+	ico: 'image/x-icon',
 	jpeg: jpegMediaType,
 	jpg: jpegMediaType,
 	png: 'image/png',
