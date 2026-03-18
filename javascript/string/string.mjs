@@ -1,3 +1,7 @@
+import * as number from '../number/number.mjs';
+import * as type from '../type/type.mjs';
+
+
 export function isNonEmptyString(value) {
 	if ( isString(value) ) {
 		if ( value.length > 0 ) {
@@ -13,19 +17,20 @@ export function isString(value) {
 		return true;
 	}
 
-	if ( value instanceof String ) {
+	if ( type.isInstance(value, String) ) {
 		return true;
 	}
 
 	return false;
 }
 
+// TODO: Checking for a number should be done in number library. Checking for string and number should maybe be in type library.
 export function shouldUseAsKey(value) {
 	if ( isNonEmptyString(value) ) {
 		return true;
 	}
 
-	if ( typeof(value) == 'number' || value instanceof Number ) {
+	if ( number.isRealNumber(value) ) {
 		return true;
 	}
 
