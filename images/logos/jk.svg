@@ -1,0 +1,77 @@
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+
+	viewBox="-2 -2 114 104"
+
+	class="svg_jkLogo"
+	fill="#0000"
+	stroke="currentColor"
+	stroke-linecap="round"
+	stroke-linejoin="round"
+	stroke-width="4"
+>
+	<g class="svg_jkLogo_core">
+		<g class="svg_jkLogo_j">
+			<path
+				class="svg_jkLogo_j_counter"
+				d="
+					M 50 0
+					v 75
+					a -25 25 0 0 1 -15 22.9
+					v -97.9
+					Z
+				"
+			/>
+			<path
+				class="svg_jkLogo_j_body"
+				d="
+					M 20 0
+					h 30
+					v 75
+					a -25 25 0 0 1 -50 0
+				"
+			/>
+		</g>
+
+		<g class="svg_jkLogo_k">
+			<g class="svg_jkLogo_k_topLeg">
+				<path
+					class="svg_jkLogo_k_topLeg_body"
+					d="
+						M 60 45
+						l 45 -45
+						h -20
+						l -25 25
+						Z
+					"
+				/>
+				<path
+					class="svg_jkLogo_k_topLeg_serif"
+					d="
+						M 75 0
+						h 35
+					"
+				/>
+			</g>
+			<g class="svg_jkLogo_k_bottomLeg">
+				<path
+					class="svg_jkLogo_k_bottomLeg_body"
+					d="
+						M 60 55
+						l 45 45
+						h -20
+						l -25 -25
+						Z
+					"
+				/>
+				<path
+					class="svg_jkLogo_k_bottomLeg_serif"
+					d="
+						M 75 100
+						h 35
+					"
+				/>
+			</g>
+		</g>
+	</g>
+</svg>
