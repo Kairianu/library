@@ -1,5 +1,5 @@
-import * as functions from '../function/function.mjs';
-import * as object from '../object/object.mjs';
+import * as functions from '../primitives/function.mjs';
+import * as object from '../primitives/object.mjs';
 
 import * as websocketMessage from './message.mjs';
 import * as websocketRouter from './router.mjs';

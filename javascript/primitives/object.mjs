@@ -1,4 +1,6 @@
-import * as functions from '../function/function.mjs';
+import * as functions from './function.mjs';
+import * as number from './number.mjs';
+import * as string from './string.mjs';
 
 
 export function convertToObject(value) {
@@ -41,6 +43,16 @@ export function isAsyncIterable(value) {
 	return false;
 }
 
+export function isInstance(value, constructor) {
+	try {
+		if ( value instanceof constructor ) {
+			return true;
+		}
+	} catch {}
+
+	return false;
+}
+
 export function isIterable(value) {
 	const iterator = value?.[Symbol.iterator];
 
@@ -56,6 +68,18 @@ export function isObject(value) {
 		if ( typeof(value) == 'object' ) {
 			return true;
 		}
+	}
+
+	return false;
+}
+
+export function shouldUseAsKey(value) {
+	if ( string.isNonEmptyString(value) ) {
+		return true;
+	}
+
+	if ( number.isRealNumber(value) ) {
+		return true;
 	}
 
 	return false;

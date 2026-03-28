@@ -1,5 +1,5 @@
-import * as functions from '../function/function.mjs';
-import * as object from '../object/object.mjs';
+import * as functions from '../primitives/function.mjs';
+import * as object from '../primitives/object.mjs';
 
 
 const ownersMessageEvents = new WeakMap();
