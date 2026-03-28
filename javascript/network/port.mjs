@@ -1,10 +1,13 @@
+import * as number from '../primitives/number.mjs';
+
+
 export const dynamicPort = 0;
 export const maxPort = 65535;
 export const minPort = 0;
 
 
 export function isValidPort(value) {
-	if ( typeof(value) != 'number' ) {
+	if ( ! number.isNumber(value) ) {
 		return false;
 	}
 
@@ -19,17 +22,17 @@ export function isValidPort(value) {
 	return true;
 }
 
-export function validatePort(value, defaultValue) {
-	const port = parseInt(value);
+export function validatePort(value, fallbackValue) {
+	const port = number.parseInteger(value);
 
 	if ( isValidPort(port) ) {
 		return port;
 	}
 
-	const defaultPort = parseInt(defaultValue);
+	const fallbackPort = number.parseInteger(fallbackValue);
 
-	if ( isValidPort(defaultPort) ) {
-		return defaultPort;
+	if ( isValidPort(fallbackPort) ) {
+		return fallbackPort;
 	}
 
 	return dynamicPort;
