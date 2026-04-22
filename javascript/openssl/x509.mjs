@@ -1,3 +1,6 @@
+import * as path from '../file/path.mjs';
+
+
 export async function generateSelfSignedCertificate() {
 	const generateCommand = new Deno.Command('openssl', {
 		args: [
@@ -25,27 +28,26 @@ export async function generateSelfSignedCertificate() {
 
 	const standardOutputText = new TextDecoder().decode(generateCommandOutput.stdout);
 
-	const certificateInfo = {
-		opensslOutput: standardOutputText,
-	};
-
 	const certificateTextMatch = standardOutputText.match(
 		/-+BEGIN CERTIFICATE.+END CERTIFICATE-+/s
 	);
 
-	if ( certificateTextMatch ) {
-		certificateInfo.certificate = certificateTextMatch[0];
+	if ( ! certificateTextMatch ) {
+		throw new Error('Unable to read certificate output.');
 	}
 
-	const keyTextMatch = standardOutputText.match(
+	const privateKeyTextMatch = standardOutputText.match(
 		/-+BEGIN PRIVATE KEY.+END PRIVATE KEY-+/s
 	);
 
-	if ( keyTextMatch ) {
-		certificateInfo.key = keyTextMatch[0];
+	if ( ! privateKeyTextMatch ) {
+		throw new Error('Unable to read certificate private key output.');
 	}
 
-	return certificateInfo;
+	const certificateText = certificateTextMatch[0];
+	const privateKeyText = privateKeyTextMatch[0];
+
+	return createCertificateInfoObject(certificateText, privateKeyText, standardOutputText);
 }
 
 export async function getCertificateEndDate(certificateText) {
@@ -84,4 +86,87 @@ export async function getCertificateEndDate(certificateText) {
 	const standardOutputText = new TextDecoder().decode(getInfoCommandOutput.stdout);
 
 	return new Date(standardOutputText);
+}
+
+export function createCertificateInfoObject(certificateText, privateKeyText, rawOutput) {
+	const certificateInfo = {
+		certificate: certificateText,
+		privateKey: privateKeyText,
+	};
+
+	if ( rawOutput != undefined ) {
+		certificateInfo.rawOutput = rawOutput;
+	}
+
+	return certificateInfo;
+}
+
+export function getTemporaryCertificateDirectoryPath() {
+	const temporaryDirectoryName = 'personal-library_x509-temporary-certificate';
+
+	// TODO: Write temporary file library.
+	const temporaryDirectory = Deno.env.get('TEMP');
+
+	if ( ! temporaryDirectory ) {
+		throw new Deno.errors.NotFound('Operating system temporary directory not found.');
+	}
+
+	return path.joinPaths(temporaryDirectory, temporaryDirectoryName);
+}
+
+export async function getTemporaryCertificate() {
+	const temporaryCertificateDirectoryPath = getTemporaryCertificateDirectoryPath();
+
+	const temporaryCertificatePath = path.joinPaths(temporaryCertificateDirectoryPath, 'certificate.pem');
+	const temporaryPrivateKeyPath = path.joinPaths(temporaryCertificateDirectoryPath, 'certificate-private-key.pem');
+
+	// TODO: Create mkdir function in file library. Bypass AlreadyExists error, throw all else.
+	try {
+		await Deno.mkdir(temporaryCertificateDirectoryPath)
+	}
+	catch(error) {
+		if ( ! (error instanceof Deno.errors.AlreadyExists) ) {
+			throw error;
+		}
+	}
+
+	let certificateInfo;
+
+	try {
+		const certificateText = await Deno.readTextFile(temporaryCertificatePath);
+		const privateKeyText = await Deno.readTextFile(temporaryPrivateKeyPath);
+
+		certificateInfo = createCertificateInfoObject(certificateText, privateKeyText);
+	}
+	catch {
+		certificateInfo = await generateSelfSignedCertificate();
+
+		try {
+			await Deno.writeTextFile(temporaryCertificatePath, certificateInfo.certificate);
+			await Deno.writeTextFile(temporaryPrivateKeyPath, certificateInfo.privateKey);
+		} catch {}
+	}
+
+	return certificateInfo;
+}
+
+export async function deleteTemporaryCertificate() {
+	const temporaryCertificateDirectoryPath = getTemporaryCertificateDirectoryPath();
+
+	try {
+		await Deno.remove(temporaryCertificateDirectoryPath, {
+			recursive: true,
+		});
+	} catch {}
+}
+
+
+
+
+
+if ( import.meta.main ) {
+	const certificateInfo = await generateSelfSignedCertificate();
+
+	console.log(certificateInfo.certificate);
+	console.log(certificateInfo.privateKey);
 }
