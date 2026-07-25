@@ -16,14 +16,14 @@ export function isString(value) {
 	return false;
 }
 
-export function toString(value, ensureType) {
+export function toString(value, options) {
 	if ( value != undefined ) {
 		try {
 			return String(value);
 		} catch {}
 	}
 
-	if ( ensureType ) {
+	if ( options?.ensureType ) {
 		return '';
 	}
 }
