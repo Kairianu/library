@@ -15,3 +15,15 @@ export function isString(value) {
 
 	return false;
 }
+
+export function toString(value, ensureType) {
+	if ( value != undefined ) {
+		try {
+			return String(value);
+		} catch {}
+	}
+
+	if ( ensureType ) {
+		return '';
+	}
+}
