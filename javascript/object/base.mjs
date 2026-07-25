@@ -1,3 +1,6 @@
+import * as string from '../primitives/string.mjs';
+
+
 export class BaseObject {
 	#name;
 
@@ -7,7 +10,11 @@ export class BaseObject {
 	}
 
 	set name(value) {
-		this.#name = String(value);
+		const valueString = string.toString(value);
+
+		if ( valueString ) {
+			this.#name = valueString;
+		}
 	}
 
 
