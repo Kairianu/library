@@ -73,6 +73,22 @@ export function isObject(value) {
 	return false;
 }
 
+export function reserveUniqueKey(keyObject, generateNewKey) {
+	if ( typeof(generateNewKey) != 'function' ) {
+		generateNewKey = () => crypto.randomUUID();
+	}
+
+	while ( true ) {
+		const key = generateNewKey();
+
+		if ( ! (key in keyObject) ) {
+			keyObject[key] = undefined;
+
+			return key;
+		}
+	}
+}
+
 export function shouldUseAsKey(value) {
 	if ( string.isNonEmptyString(value) ) {
 		return true;
