@@ -33,6 +33,24 @@ export function getNewObject() {
 	return {};
 }
 
+export function getUniqueKey(keyObject, generateNewKey) {
+	if ( ! isObject(keyObject) ) {
+		return;
+	}
+
+	if ( ! functions.isFunction(generateNewKey) ) {
+		generateNewKey = () => crypto.randomUUID();
+	}
+
+	while ( true ) {
+		const key = generateNewKey();
+
+		if ( ! (key in keyObject) ) {
+			return key;
+		}
+	}
+}
+
 export function isAsyncIterable(value) {
 	const asyncIterator = value?.[Symbol.asyncIterator];
 
@@ -71,26 +89,6 @@ export function isObject(value) {
 	}
 
 	return false;
-}
-
-export function reserveUniqueKey(keyObject, generateNewKey) {
-	if ( ! isObject(keyObject) ) {
-		return;
-	}
-
-	if ( typeof(generateNewKey) != 'function' ) {
-		generateNewKey = () => crypto.randomUUID();
-	}
-
-	while ( true ) {
-		const key = generateNewKey();
-
-		if ( ! (key in keyObject) ) {
-			keyObject[key] = undefined;
-
-			return key;
-		}
-	}
 }
 
 export function shouldUseAsKey(value) {
