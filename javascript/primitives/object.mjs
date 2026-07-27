@@ -74,6 +74,10 @@ export function isObject(value) {
 }
 
 export function reserveUniqueKey(keyObject, generateNewKey) {
+	if ( ! isObject(keyObject) ) {
+		return;
+	}
+
 	if ( typeof(generateNewKey) != 'function' ) {
 		generateNewKey = () => crypto.randomUUID();
 	}
