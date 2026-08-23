@@ -1,7 +1,3 @@
-let apiToken;
-let zoneID;
-
-
 // TODO: Create a library for Fail.
 class Fail {
 	static createFromError(error) {
@@ -127,7 +123,9 @@ async function getPublicIP(ipVersion) {
 
 
 
-async function deleteDNSRecord(dnsRecordID) {
+async function deleteDNSRecord(credentials, dnsRecordID) {
+	validateCredentials(credentials);
+
 	if ( typeof(dnsRecordID) != 'string' || ! dnsRecordID ) {
 		return new Fail(
 			'DNS record id must be a non-empty string.',
@@ -137,14 +135,14 @@ async function deleteDNSRecord(dnsRecordID) {
 		);
 	}
 
-	const url = `https://api.cloudflare.com/client/v4/zones/${zoneID}/dns_records/${dnsRecordID}`;
+	const url = `https://api.cloudflare.com/client/v4/zones/${credentials.zoneID}/dns_records/${dnsRecordID}`;
 
 	let response;
 
 	try {
 		response = await fetch(url, {
 			headers: {
-				'Authorization': `Bearer ${apiToken}`,
+				'Authorization': `Bearer ${credentials.apiToken}`,
 			},
 			method: 'DELETE',
 		});
@@ -174,15 +172,17 @@ async function deleteDNSRecord(dnsRecordID) {
 	return responseInfo;
 }
 
-async function getDNSRecords(filters) {
-	const url = `https://api.cloudflare.com/client/v4/zones/${zoneID}/dns_records`;
+async function getDNSRecords(credentials, filters) {
+	validateCredentials(credentials);
+
+	const url = `https://api.cloudflare.com/client/v4/zones/${credentials.zoneID}/dns_records`;
 
 	let response;
 
 	try {
 		response = await fetch(url, {
 			headers: {
-				'Authorization': `Bearer ${apiToken}`,
+				'Authorization': `Bearer ${credentials.apiToken}`,
 			},
 			method: 'GET',
 		});
@@ -238,7 +238,9 @@ async function getDNSRecords(filters) {
 	return dnsRecords;
 }
 
-async function updateDNSRecord(dnsRecordType='AAAA', options) {
+async function updateDNSRecord(credentials, dnsRecordType='AAAA', options) {
+	validateCredentials(credentials);
+
 	const ipVersion = getIPVersionFromDNSRecordType(dnsRecordType);
 
 	if ( ! ipVersion ) {
@@ -256,14 +258,14 @@ async function updateDNSRecord(dnsRecordType='AAAA', options) {
 		return publicIP;
 	}
 
-	const dnsRecordsInfo = await getDNSRecords({
+	const dnsRecordsInfo = await getDNSRecords(credentials, {
 		type: dnsRecordType,
 	});
 
 	const dnsRecordInfo = dnsRecordsInfo[0];
 
 	let method;
-	let url = `https://api.cloudflare.com/client/v4/zones/${zoneID}/dns_records`;
+	let url = `https://api.cloudflare.com/client/v4/zones/${credentials.zoneID}/dns_records`;
 
 	if ( dnsRecordInfo ) {
 		method = 'PUT';
@@ -291,7 +293,7 @@ async function updateDNSRecord(dnsRecordType='AAAA', options) {
 		response = await fetch(url, {
 			body: JSON.stringify(bodyData),
 			headers: {
-				'Authorization': `Bearer ${apiToken}`,
+				'Authorization': `Bearer ${credentials.apiToken}`,
 				'Content-Type': 'application/json',
 			},
 			method: method,
@@ -322,7 +324,7 @@ async function updateDNSRecord(dnsRecordType='AAAA', options) {
 	return responseInfo;
 }
 
-async function updateDNSRecordLoop() {
+async function updateDNSRecordLoop(credentials) {
 	const failTimeout = 10 * 1000;
 	const successTimeout = 10 * 60 * 1000;
 
@@ -339,7 +341,7 @@ async function updateDNSRecordLoop() {
 			timeout = successTimeout;
 		}
 		else {
-			const dnsRecordInfo = await updateDNSRecord(undefined, {
+			const dnsRecordInfo = await updateDNSRecord(credentials, undefined, {
 				publicIP: publicIP,
 			});
 
@@ -362,16 +364,32 @@ async function updateDNSRecordLoop() {
 }
 
 
+function validateCredentials(credentials) {
+	if ( ! credentials.apiToken ) {
+		throw new Error('Must supply API token.');
+	}
+
+	if ( ! credentials.zoneID ) {
+		throw new Error('Must supply zone ID.');
+	}
+}
+
+
 
 
 
 if ( import.meta.main ) {
-	apiToken = Deno.args[0];
-	zoneID = Deno.args[1];
+	let credentials;
 
-	if ( ! apiToken || ! zoneID ) {
-		throw new Error('Must supply API token and zone ID.');
+	for await ( const stdinBuffer of Deno.stdin.readable ) {
+		const stdinText = new TextDecoder().decode(stdinBuffer);
+
+		credentials = JSON.parse(stdinText);
+
+		break;
 	}
 
-	updateDNSRecordLoop();
+	validateCredentials(credentials);
+
+	updateDNSRecordLoop(credentials);
 }
