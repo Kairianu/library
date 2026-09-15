@@ -55,8 +55,8 @@ export class SecureHTTPServer extends SecureTCPListener {
 		} catch {}
 	}
 
-	async listen(listenOptions) {
-		await super.listen(listenOptions);
+	async listen(...listenArgs) {
+		await super.listen(...listenArgs);
 
 		this.startConnectionLoop();
 	}
