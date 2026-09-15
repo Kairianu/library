@@ -1,5 +1,7 @@
 import { SecureTCPListener } from '../../network/listeners/tcp/secure.mjs';
 
+import * as networkAddress from '../../network/address/address.mjs';
+
 import * as httpResponse from '../response.mjs';
 
 
@@ -11,6 +13,27 @@ export class SecureHTTPServer extends SecureTCPListener {
 
 	async getHTTPResponse() {
 		return httpResponse.getNotFoundResponse();
+	}
+
+	async getListeningText() {
+		const listeningText = await super.getListeningText();
+
+		if ( listeningText == 'Closed' ) {
+			return listeningText;
+		}
+
+		const hostname = await this.getHostname();
+		const port = await this.getPort();
+
+		let urlHostname = networkAddress.getRoutableAddress(hostname);
+
+		if ( networkAddress.isIPv6Address(urlHostname) ) {
+			urlHostname = '[' + urlHostname + ']';
+		}
+
+		const urlString = this.protocol + '://' + urlHostname + ':' + port;
+
+		return listeningText + ' (' + urlString + ')';
 	}
 
 	async handleConnection(connection) {
