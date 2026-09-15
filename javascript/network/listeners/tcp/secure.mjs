@@ -108,10 +108,10 @@ export class SecureTCPListener extends BaseObject {
 	}
 
 	async getListeningText() {
-		const url = await this.getURL();
+		const host = await this.getHost();
 
-		if ( url ) {
-			return 'Listening - ' + url;
+		if ( host ) {
+			return 'Listening - ' + host;
 		}
 
 		return 'Closed';
@@ -123,25 +123,24 @@ export class SecureTCPListener extends BaseObject {
 		return listener?.addr.port;
 	}
 
-	async getURL() {
-		const urlHost = await this.getURLHost();
+	async getHost() {
+		let hostname = await this.getHostname();
 
-		if ( ! urlHost ) {
+		if ( ! hostname ) {
 			return;
 		}
 
-		const transport = this.transport ?? '';
-
-		return transport + '://' + urlHost;
-	}
-
-	async getURLHost() {
 		const port = await this.getPort();
-		const hostname = await this.getHostname();
 
-		if ( hostname && port ) {
-			return hostname + ':' + port;
+		if ( ! port ) {
+			return;
 		}
+
+		if ( hostname.includes(':') ) {
+			hostname = '[' + hostname + ']';
+		}
+
+		return hostname + ':' + port;
 	}
 
 	async listen(options, logListeningMessage) {
