@@ -16,6 +16,14 @@ export const ipv4RegExpString = (
 export const ipv4FullRegExp = new RegExp('^' + ipv4RegExpString + '$');
 
 
+export function getRoutableAddress(value) {
+	if ( value == hostAddress ) {
+		return localhostAddress;
+	}
+
+	return value;
+}
+
 export function getValidAddress(value, fallbackValue) {
 	if ( isValidAddress(value) ) {
 		return value;
