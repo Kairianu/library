@@ -5,3 +5,11 @@ export function isFunction(value) {
 
 	return false;
 }
+
+export function settle(value, ...args) {
+	if ( typeof(value) == 'function' ) {
+		return value(...args);
+	}
+
+	return value;
+}
