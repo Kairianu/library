@@ -103,6 +103,22 @@ export function shouldUseAsKey(value) {
 	return false;
 }
 
+export function setUnsetKeys(items, keyValues) {
+	for ( const item of items ) {
+		if ( ! shouldUseProperties(item) ) {
+			continue;
+		}
+
+		const settledKeyValues = functions.settle(keyValues);
+
+		for ( const [key, value] of Object.entries(settledKeyValues) ) {
+			if ( ! Object.hasOwn(item, key) ) {
+				item[key] = value;
+			}
+		}
+	}
+}
+
 export function shouldUseProperties(value) {
 	if ( isObject(value) ) {
 		return true;
