@@ -1,168 +1,141 @@
-import * as networkPort from '../../port.mjs';
-import * as x509 from '../../../openssl/x509.mjs';
-
 import { BaseObject } from '../../../object/base.mjs';
+import * as ipv6 from '../../address/ipv6.mjs';
+import * as networkAddress from '../../address/address.mjs';
+import * as networkPort from '../../port.mjs';
+import * as object from '../../../primitives/object.mjs';
 
 
-export async function buildListenOptions(options) {
-	const listenOptions = getDefaultListenOptions();
+/** TODO: Possibly make a library for assigning objects.
+ * Options to not assign undefined values.
+ * Option to type checking values.
+*/
+export function getListenOptions(options) {
+	const listenOptions = {
+		alpnProtocols: ['h2', 'http/1.1'],
+		hostname: ipv6.hostAddress,
+		port: networkPort.dynamicPort,
+		reusePort: false,
+		tcpBacklog: 511,
+		transport: 'tcp',
+	};
 
-	if ( typeof(options) == 'number' ) {
-		listenOptions.port = options;
+	const optionsType = typeof(options);
+
+	if ( optionsType == 'number' ) {
+		const port = options;
+
+		if ( networkPort.isValidPort(port) ) {
+			listenOptions.port = port;
+		}
 	}
-	else {
+	// TODO: Make a library to parse ipv4 and ipv6 host string.
+	else if ( optionsType == 'string' ) {
+		const host = options;
+
+		listenOptions.hostname = host;
+	}
+	else if ( object.shouldUseProperties(options) ) {
 		Object.assign(listenOptions, options);
-	}
-
-	if ( ! Object.hasOwn(listenOptions, 'cert') ) {
-		const certificateInfo = await x509.getTemporaryCertificate();
-
-		listenOptions.cert = certificateInfo.certificate;
-		listenOptions.key = certificateInfo.privateKey;
 	}
 
 	return listenOptions;
 }
 
-export function getDefaultListenOptions() {
-	return {
-		alpnProtocols: ['h2', 'http/1.1'],
-		port: networkPort.dynamicPort,
-	};
-}
-
 
 
 export class SecureTCPListener extends BaseObject {
+	#closed = true;
 	#listener;
 	#listenOptions;
-	#opening = false;
-
-
-	async #getListener() {
-		while ( this.opening ) {
-			await new Promise(resolve => setTimeout(resolve, 0));
-		}
-
-		return this.#listener;
-	}
-
-
-
-	constructor(...listenArgs) {
-		super();
-
-		if ( listenArgs.length > 0 ) {
-			this.listen(...listenArgs);
-		}
-	}
 
 
 	get closed() {
-		if ( this.opening ) {
-			return false;
-		}
-
-		return !(this.#listener);
+		return this.#closed;
 	}
 
-	get listenMethod() {
+	get host() {
+		return networkAddress.getHostAddress(this.hostname, this.port);
+	}
+
+	get hostname() {
+		if ( this.closed ) {
+			return;
+		}
+
+		return this.#listener?.addr.hostname;
+	}
+
+	get listener() {
+		return this.#listener;
+	}
+
+	get listeningMessage() {
+		return this.formatMessage(this.listeningText);
+	}
+
+	get listeningText() {
+		if ( this.closed ) {
+			return 'Closed';
+		}
+
+		return 'Listening - ' + this.host;
+	}
+
+	get createListenerMethod() {
 		return Deno.listenTls;
 	}
 
-	get opening() {
-		return this.#opening;
-	}
+	get port() {
+		if ( this.closed ) {
+			return;
+		}
 
-	get transport() {
-		return 'tcp';
+		return this.#listener?.addr.port;
 	}
 
 
 	async accept() {
-		const listener = await this.#getListener();
-
-		return await listener?.accept();
+		return await this.#listener?.accept();
 	}
 
-	async close() {
-		const listener = await this.#getListener();
-
-		try {
-			listener?.close();
-		} catch {}
-
-		this.#listener = undefined;
+	blockEventLoop() {
+		this.#listener?.ref();
 	}
 
-	async getHostname() {
-		const listener = await this.#getListener();
-
-		return listener?.addr.hostname;
+	cloneListenOptions() {
+		return structuredClone(this.#listenOptions);
 	}
 
-	async getListeningMessage() {
-		const listeningText = await this.getListeningText();
+	async close(ensureClosure) {
+		const listener = this.#listener;
 
-		return this.formatMessage(listeningText);
-	}
+		if ( listener ) {
+			try {
+				listener.close();
 
-	async getListeningText() {
-		const host = await this.getHost();
-
-		if ( host ) {
-			return 'Listening - ' + host;
+				if ( ensureClosure ) {
+					await listener.accept();
+				}
+			} catch {}
 		}
 
-		return 'Closed';
+		this.#closed = true;
 	}
 
-	async getPort() {
-		const listener = await this.#getListener();
+	async listen(options) {
+		await this.close(true);
 
-		return listener?.addr.port;
-	}
+		const listenOptions = getListenOptions(options);
 
-	async getHost() {
-		let hostname = await this.getHostname();
+		this.#listener = this.createListenerMethod(listenOptions);
 
-		if ( ! hostname ) {
-			return;
-		}
-
-		const port = await this.getPort();
-
-		if ( ! port ) {
-			return;
-		}
-
-		if ( hostname.includes(':') ) {
-			hostname = '[' + hostname + ']';
-		}
-
-		return hostname + ':' + port;
-	}
-
-	async listen(options, logListeningMessage) {
-		this.#opening = true;
-
-		try {
-			this.#listener?.close();
-		} catch {}
-
-		const listenOptions = await buildListenOptions(options);
-
-		this.#listener = this.listenMethod(listenOptions);
+		this.#closed = false;
 
 		this.#listenOptions = listenOptions;
+	}
 
-		this.#opening = false;
-
-		if ( logListeningMessage ) {
-			const listeningMessage = await this.getListeningMessage();
-
-			console.log(listeningMessage);
-		}
+	unblockEventLoop() {
+		this.#listener?.unref();
 	}
 
 
@@ -176,23 +149,5 @@ export class SecureTCPListener extends BaseObject {
 
 			yield connection;
 		}
-	}
-}
-
-
-
-
-
-if ( import.meta.main ) {
-	const secureTCPListener = new SecureTCPListener(undefined, true);
-
-	for await ( const connection of secureTCPListener ) {
-		const connectionDate = new Date().toISOString();
-
-		const connectionDateString = '[' + connectionDate + ']';
-
-		console.log(connectionDateString, connection);
-
-		connection.close();
 	}
 }
