@@ -53,7 +53,15 @@ export class SecureTCPListener extends BaseObject {
 		return this.#closed;
 	}
 
+	get createListenerMethod() {
+		return Deno.listenTls;
+	}
+
 	get host() {
+		if ( this.closed ) {
+			return;
+		}
+
 		return networkAddress.getHostAddress(this.hostname, this.port);
 	}
 
@@ -78,11 +86,24 @@ export class SecureTCPListener extends BaseObject {
 			return 'Closed';
 		}
 
-		return 'Listening - ' + this.host;
-	}
+		const host = this.host;
+		const url = this.url;
 
-	get createListenerMethod() {
-		return Deno.listenTls;
+		let hostString;
+
+		if ( url ) {
+			if ( url.includes(host) ) {
+				hostString = url;
+			}
+			else {
+				hostString = `${host} (${url})`;
+			}
+		}
+		else {
+			hostString = host;
+		}
+
+		return `Listening via ${this.transport} on ${hostString}`;
 	}
 
 	get port() {
@@ -91,6 +112,42 @@ export class SecureTCPListener extends BaseObject {
 		}
 
 		return this.#listener?.addr.port;
+	}
+
+	get routableHost() {
+		if ( this.closed ) {
+			return;
+		}
+
+		return networkAddress.getHostAddress(this.routableHostname, this.port);
+	}
+
+	get routableHostname() {
+		if ( this.closed ) {
+			return;
+		}
+
+		return networkAddress.getRoutableAddress(this.hostname);
+	}
+
+	get transport() {
+		return this.#listener?.addr.transport ?? 'tcp';
+	}
+
+	get url() {
+		const protocol = this.protocol;
+
+		if ( ! protocol ) {
+			return;
+		}
+
+		const host = this.routableHost;
+
+		if ( ! host ) {
+			return;
+		}
+
+		return protocol + '://' + host;
 	}
 
 
