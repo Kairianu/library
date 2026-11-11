@@ -9,19 +9,13 @@ export function isNonEmptyString(value) {
 }
 
 export function isString(value) {
-	if ( typeof(value) == 'string' ) {
-		return true;
-	}
-
-	return false;
+	return typeof(value) == 'string';
 }
 
 export function toString(value) {
-	if ( value == undefined ) {
-		return;
+	if ( value != undefined ) {
+		try {
+			return String(value);
+		} catch {}
 	}
-
-	try {
-		return String(value);
-	} catch {}
 }
