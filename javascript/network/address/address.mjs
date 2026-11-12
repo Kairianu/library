@@ -3,22 +3,19 @@ import * as string from '../../primitives/string.mjs';
 import * as ipv4 from './ipv4.mjs';
 import * as ipv6 from './ipv6.mjs';
 
+export * as ipv4 from './ipv4.mjs';
+export * as ipv6 from './ipv6.mjs';
 
-// TODO: Make this function more thorough.
-// TODO: Move to ipv6 library when more thorough.
-export function isIPv6Address(value) {
-	return String(value).includes(':');
-}
 
 export function getHostAddress(hostname, port) {
-	hostname = string.toString(hostname) ?? '';
-	port = string.toString(port) ?? '';
+	hostname = string.toString(hostname)?.trim();
+	port = string.toString(port)?.trim();
 
-	if ( isIPv6Address(hostname) ) {
+	if ( ipv6.isLikelyIPv6Address(hostname) ) {
 		hostname = '[' + hostname + ']';
 	}
 
-	let hostString = hostname;
+	let hostString = hostname ?? '';
 
 	if ( port ) {
 		hostString += ':' + port;
@@ -27,10 +24,12 @@ export function getHostAddress(hostname, port) {
 	return hostString;
 }
 
+/*
+	Looks like it will return an IPv6 address but will return a IPv4 or IPv6
+	address due to how getRoutableAddress methods currently work by returning
+	the localhostAddress if it matches the hostAddress.
+	This may have to be changed.
+*/
 export function getRoutableAddress(value) {
-	if ( isIPv6Address(value) ) {
-		return ipv6.getRoutableAddress(value);
-	}
-
-	return ipv4.getRoutableAddress(value);
+	return ipv6.getRoutableAddress(ipv4.getRoutableAddress(value));
 }
