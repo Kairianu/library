@@ -10,127 +10,370 @@
 	If uri is not a url then query and fragment should be part of path.
 */
 
-// TODO: Combine regExps into one object.
-// TODO: Export regExp strings?
 
+
+import * as networkAddress from '../network/address/address.mjs';
+import * as string from '../primitives/string.mjs';
+
+
+function executeStickyRegularExpression(regularExpression, parseData) {
+	regularExpression.lastIndex = parseData.lastIndex;
+
+	const regularExpressionMatch = regularExpression.exec(parseData.value);
+
+	if ( regularExpressionMatch ) {
+		parseData.lastIndex = regularExpression.lastIndex;
+	}
+
+	return regularExpressionMatch;
+}
+
+function getNewParseData(value) {
+	return {
+		lastIndex: 0,
+		value: value,
+	};
+}
 
 
 
 export class Authority {
-	regExpStrings = {
-		domain: '(?<domain>[^:/]*)',
-		port: ':(?<port>[^/]*)',
+	#host;
+	#password;
+	#port;
+	#username;
 
-		// TODO: Check userinfoRegExp.
-		// userinfoRegExp = /(?<username>[^:]*)(:(?<password>.*))?@/y;
-		userinfo: '(?<userinfo>[^:]*(:.*)?)@',
+
+	// TODO: Should host and port check for trailing slash?
+	regularExpressions = {
+		host: /(?<host>[^:/]*)/y,
+		port: /:(?<port>[^/]*)/y,
+		userinfo: /(?<username>[^:]*)(:(?<password>.*))?@/y,
 	};
 
-	regExps = {
-		domain: new RegExp(this.regExpStrings.domain, 'y'),
-		port: new RegExp(this.regExpStrings.port, 'y'),
-		userinfo: new RegExp(this.regExpStrings.userinfo, 'y'),
-	};
 
+	get host() {
+		return this.#host;
+	}
 
-	parseString(authorityString) {
-		const regExps = this.regExps;
+	set host(value) {
+		let host;
 
-		const domainRegExp = regExps.domain;
-		const portRegExp = regExps.port;
-		const userinfoRegExp = regExps.userinfo;
-
-		let lastIndex = 0;
-
-		userinfoRegExp.lastIndex = lastIndex;
-
-		const userinfoMatch = userinfoRegExp.exec(authorityString);
-
-		if ( userinfoMatch ) {
-			this.userinfo = new Userinfo(userinfoMatch.groups.userinfo);
-
-			lastIndex = userinfoRegExp.lastIndex;
+		if ( value != undefined ) {
+			host = new Host(value);
 		}
 
-		domainRegExp.lastIndex = lastIndex;
+		this.#host = host;
+	}
 
-		const domainMatch = domainRegExp.exec(authorityString);
+	get password() {
+		return this.#password;
+	}
 
-		if ( domainMatch ) {
-			this.domain = new Domain(domainMatch.groups.domain);
+	set password(value) {
+		this.#password = string.toString(value);
+	}
 
-			lastIndex = domainRegExp.lastIndex;
+	get port() {
+		return this.#port;
+	}
+
+	set port(value) {
+		let port;
+
+		if ( value != undefined ) {
+			port = new Port(value);
 		}
 
-		portRegExp.lastIndex = lastIndex;
+		this.#port = port;
+	}
 
-		const portMatch = portRegExp.exec(authorityString);
+	get username() {
+		return this.#username;
+	}
 
-		if ( portMatch ) {
-			this.port = new Port(portMatch.groups.port);
+	set username(value) {
+		this.#username = string.toString(value);
+	}
 
-			lastIndex = portRegExp.lastIndex;
+
+	get authorityString() {
+		let authorityString = '';
+
+		const userinfoString = this.userinfoString;
+
+		if ( userinfoString ) {
+			authorityString += userinfoString + '@';
 		}
+
+		const host = this.host;
+
+		if ( host ) {
+			authorityString += host;
+		}
+
+		const port = this.port;
+
+		if ( port ) {
+			authorityString += ':' + port;
+		}
+
+		return authorityString;
+	}
+
+	get userinfoString() {
+		let userinfoString = '';
+
+		const username = this.username;
+
+		if ( username ) {
+			userinfoString += username;
+		}
+
+		const password = this.password;
+
+		if ( password ) {
+			userinfoString += ':' + password;
+		}
+
+		return userinfoString;
+	}
+
+
+	parseString(value) {
+		const authorityString = string.toString(value);
+
+		if ( ! authorityString ) {
+			return;
+		}
+
+		const parseData = getNewParseData(authorityString);
+
+		const userinfoMatch = executeStickyRegularExpression(this.regularExpressions.userinfo, parseData);
+
+		this.password = userinfoMatch?.groups.password;
+		this.username = userinfoMatch?.groups.username;
+
+		const hostMatch = executeStickyRegularExpression(this.regularExpressions.host, parseData);
+
+		this.host = hostMatch?.groups.host;
+
+		const portMatch = executeStickyRegularExpression(this.regularExpressions.port, parseData);
+
+		this.port = portMatch?.groups.port;
+	}
+
+	toString() {
+		return this.authorityString;
+	}
+
+
+	constructor(value) {
+		this.parseString(value);
 	}
 }
+
+
+
+
+
+
+
+
+
+export class Host {
+	#hostname;
+	#port;
+
+
+	regularExpressions = {
+		bracket: /\[(?<hostname>.*)\]/y,
+		host: /(?<hostname>[^:]*)(:(?<port>.*))?/,
+		port: /:(?<port>.*)/y,
+	};
+
+
+	get hostname() {
+		return this.#hostname;
+	}
+
+	set hostname(value) {
+		let hostname;
+
+		if ( value != undefined ) {
+			hostname = new Hostname(value);
+		}
+
+		this.#hostname = hostname;
+	}
+
+	get port() {
+		return this.#port;
+	}
+
+	set port(value) {
+		let port;
+
+		if ( value != undefined ) {
+			port = new Port(value);
+		}
+
+		this.#port = port;
+	}
+
+
+	parseString(value) {
+		const hostString = string.toString(value)?.trim();
+
+		if ( ! hostString ) {
+			return;
+		}
+
+		const parseData = getNewParseData(hostString);
+
+		const bracketMatch = executeStickyRegularExpression(this.regularExpressions.ipv6, parseData);
+
+		if ( bracketMatch ) {
+			this.hostname = bracketMatch.groups.hostname;
+
+			const portMatch = executeStickyRegularExpression(this.regularExpressions.port, parseData);
+
+			this.port = portMatch?.groups.port;
+		}
+		else {
+			const hostMatch = this.regularExpressions.host.exec(hostString);
+
+			this.hostname = hostMatch?.groups.hostname;
+			this.port = hostMatch?.groups.port;
+		}
+	}
+
+
+	constructor(value) {
+		this.parseString(value);
+	}
+}
+
+
+
+
+export class Hostname {
+	#hostnameString;
+	#isIPv4Address = false;
+	#isIPv6Address = false;
+
+
+	get hostnameArray() {
+		const hostnameString = this.hostnameString;
+
+		if ( ! hostnameString ) {
+			return;
+		}
+
+		if ( this.isIPv4Address ) {
+			return networkAddress.ipv4.getAddressArray(hostnameString);
+		}
+		else if ( this.isIPv6Address ) {
+			return networkAddress.ipv6.getAddressArray(hostnameString);
+		}
+
+		return hostnameString.split('.');
+	}
+
+	get hostnameString() {
+		return this.#hostnameString;
+	}
+
+	get isDomain() {
+		return !(this.isIPv4Address || this.isIPv6Address);
+	}
+
+	get isIPv4Address() {
+		return this.#isIPv4Address;
+	}
+
+	get isIPv6Address() {
+		return this.#isIPv6Address;
+	}
+
+
+	parseString(value) {
+		const hostnameString = string.toString(value)?.trim();
+
+		if ( hostnameString ) {
+			if ( networkAddress.ipv4.isIPv4Address(hostnameString) ) {
+				this.#isIPv4Address = true;
+			}
+			else if ( networkAddress.ipv6.isLikelyIPv6Address(hostnameString) ) {
+				this.#isIPv6Address = true;
+			}
+		}
+
+		this.#hostnameString = hostnameString;
+	}
+
+	toString() {
+		return this.hostnameString ?? '';
+	}
+
+
+	constructor(value) {
+		this.parseString(value);
+	}
+}
+
+
+
+// TODO: This should maybe use the network port library.
+export class Port {}
+
+
+
 
 
 
 // TODO: Handle empty domains and tld only.
-export class Domain {
-	regExpStrings = {
-		domainParts: '(?<domainPart>[^.]+)',
-	};
-
-	regExps = {
-		domainParts: new RegExp(this.regExpStrings.domainParts, 'g'),
-	};
+// export class Host {
+// 	regularExpressions = {
+// 		hostParts: /(?<domainPart>[^.]+)/g,
+// 	};
 
 
-	get fullDomain() {
-		return (
-			this.subdomainString
-			+ '.' + this.secondLevelDomain
-			+ '.' + this.topLevelDomain
-		);
-	}
+// 	get fullDomain() {
+// 		return (
+// 			this.subdomainString
+// 			+ '.' + this.secondLevelDomain
+// 			+ '.' + this.topLevelDomain
+// 		);
+// 	}
 
-	get subdomainString() {
-		return this.subdomainArray.join('.');
-	}
-
-
-	constructor(domainString) {
-		this.parseString(domainString);
-	}
+// 	get subdomainString() {
+// 		return this.subdomainArray.join('.');
+// 	}
 
 
-	parseString(domainString) {
-		const domainArray = [];
+// 	parseString(hostString) {
+// 		const domainArray = [];
 
-		const domainPartsRegExp = this.regExps.domainParts;
+// 		const domainPartsRegExp = this.regExps.domainParts;
 
-		while ( true ) {
-			const domainPartsMatch = domainPartsRegExp.exec(domainString);
+// 		while ( true ) {
+// 			const domainPartsMatch = domainPartsRegExp.exec(domainString);
 
-			if ( ! domainPartsMatch ) {
-				break;
-			}
+// 			if ( ! domainPartsMatch ) {
+// 				break;
+// 			}
 
-			domainArray.push(domainPartsMatch.groups.domainPart);
-		}
+// 			domainArray.push(domainPartsMatch.groups.domainPart);
+// 		}
 
-		this.topLevelDomain = domainArray.pop();
+// 		this.topLevelDomain = domainArray.pop();
 
-		this.secondLevelDomain = domainArray.pop();
+// 		this.secondLevelDomain = domainArray.pop();
 
-		this.subdomainArray = domainArray;
-	}
-
-	toString() {
-		return this.fullDomain;
-	}
-}
+// 		this.subdomainArray = domainArray;
+// 	}
+// }
 
 
 
@@ -192,24 +435,9 @@ export class Path {}
 
 
 
-// TODO: This should maybe use the Port library from network.
-export class Port {}
 
 
 
-export class Userinfo {}
-
-
-
-export class Scheme {}
-
-
-
-
-console.log(new RegExp())
-console.log()
-
-Deno.exit();
 
 
 export class URI {
@@ -220,17 +448,9 @@ export class URI {
 	#scheme;
 
 
-	regExpStrings = {
-		authority: '//(?<authority>[^/?#]*)',
-		fragment: '#(?<fragment>.*)',
-		path: '',
-		query: '',
-		scheme: '',
-	};
-
-	regExps = {
-		authority: new RegExp(this.regExpStrings.authority, 'y'),
-		fragment: new RegExp(this.regExpStrings.fragment, 'y'),
+	regularExpressions = {
+		authority: /\/\/(?<authority>[^/?#]*)/y,
+		fragment: /#(?<fragment>.*)/y,
 		path: /(?<path>[^?#]*)/y,
 		query: /\?(?<query>[^#]*)/y,
 		scheme: /\s*(?<scheme>[^:/]*):/y,
@@ -241,14 +461,14 @@ export class URI {
 		return this.#authority;
 	}
 
-	set authority(authorityString) {
-		if ( authorityString == undefined ) {
-			this.#authority = undefined;
+	set authority(value) {
+		let authority;
 
-			return;
+		if ( value != undefined ) {
+			authority = new Authority(value);
 		}
 
-		this.#authority = new Authority(authorityString);
+		this.#authority = authority;
 	}
 
 
@@ -256,14 +476,8 @@ export class URI {
 		return this.#fragment;
 	}
 
-	set fragment(fragmentString) {
-		if ( fragmentString == undefined ) {
-			this.#fragment = undefined;
-
-			return;
-		}
-
-		this.#fragment = String(fragmentString);
+	set fragment(value) {
+		this.#fragment = string.toString(value);
 	}
 
 
@@ -271,14 +485,14 @@ export class URI {
 		return this.#path;
 	}
 
-	set path(pathString) {
-		if ( pathString == undefined ) {
-			this.#path = undefined;
+	set path(value) {
+		let path;
 
-			return;
+		if ( value != undefined ) {
+			path = new Path(value);
 		}
 
-		this.#path = new Path(pathString);
+		this.#path = path;
 	}
 
 
@@ -286,14 +500,14 @@ export class URI {
 		return this.#query;
 	}
 
-	set query(queryString) {
-		if ( queryString == undefined ) {
-			this.#query = undefined;
+	set query(value) {
+		let query;
 
-			return;
+		if ( value != undefined ) {
+			query = new Query(value);
 		}
 
-		this.#query = new Query(queryString);
+		this.#query = query;
 	}
 
 
@@ -301,14 +515,8 @@ export class URI {
 		return this.#scheme;
 	}
 
-	set scheme(schemeString) {
-		if ( schemeString == undefined ) {
-			this.#scheme = undefined;
-
-			return;
-		}
-
-		this.#scheme = new Scheme(schemeString);
+	set scheme(value) {
+		this.#scheme = string.toString(value);
 	}
 
 
@@ -322,77 +530,34 @@ export class URI {
 	}
 
 
-	constructor(uriString) {
-		this.parseString(uriString);
-	}
-
-
-	parseString(uriString) {
-		uriString = String(uriString);
+	parseString(value) {
+		const uriString = string.toString(value);
 
 		if ( ! uriString ) {
 			return;
 		}
 
-		const regExps = this.regExps;
+		const parseData = getNewParseData(uriString);
 
-		const schemeRegExp = regExps.scheme;
-		const authorityRegExp = regExps.authority;
-		const pathRegExp = regExps.path;
-		const queryRegExp = regExps.query;
-		const fragmentRegExp = regExps.fragment;
+		const schemeMatch = executeStickyRegularExpression(this.regularExpressions.scheme, parseData);
 
-		let lastIndex = 0;
+		this.scheme = schemeMatch?.groups.scheme;
 
-		schemeRegExp.lastIndex = lastIndex;
+		const authorityMatch = executeStickyRegularExpression(this.regularExpressions.authority, parseData);
 
-		const schemeMatch = schemeRegExp.exec(uriString);
+		this.authority = authorityMatch?.groups.authority;
 
-		if ( schemeMatch ) {
-			this.scheme = schemeMatch.groups.scheme;
+		const pathMatch = executeStickyRegularExpression(this.regularExpressions.path, parseData);
 
-			lastIndex = schemeRegExp.lastIndex;
-		}
+		this.path = pathMatch?.groups.path;
 
-		authorityRegExp.lastIndex = lastIndex;
+		const queryMatch = executeStickyRegularExpression(this.regularExpressions.query, parseData);
 
-		const authorityMatch = authorityRegExp.exec(uriString);
+		this.query = queryMatch?.groups.query;
 
-		if ( authorityMatch ) {
-			this.authority = authorityMatch.groups.authority;
+		const fragmentMatch = executeStickyRegularExpression(this.regularExpressions.fragment, parseData);
 
-			lastIndex = authorityRegExp.lastIndex;
-		}
-
-		pathRegExp.lastIndex = lastIndex;
-
-		const pathMatch = pathRegExp.exec(uriString);
-
-		if ( pathMatch ) {
-			this.path = pathMatch.groups.path;
-
-			lastIndex = pathRegExp.lastIndex;
-		}
-
-		queryRegExp.lastIndex = lastIndex;
-
-		const queryMatch = queryRegExp.exec(uriString);
-
-		if ( queryMatch ) {
-			this.query = queryMatch.groups.query;
-
-			lastIndex = queryRegExp.lastIndex;
-		}
-
-		fragmentRegExp.lastIndex = lastIndex;
-
-		const fragmentMatch = fragmentRegExp.exec(uriString);
-
-		if ( fragmentMatch ) {
-			this.fragment = fragmentMatch.groups.fragment;
-
-			lastIndex = fragmentRegExp.lastIndex;
-		}
+		this.fragment = fragmentMatch?.groups.fragment;
 	}
 
 
@@ -456,6 +621,11 @@ export class URI {
 
 		return uriString;
 	}
+
+
+	constructor(value) {
+		this.parseString(value);
+	}
 }
 
 
@@ -469,12 +639,16 @@ export class URI {
 
 
 const testStrings = [
-	'scheme://username:password@a.b.c.domain.tld:port/path?query&key1=value1#fragment',
+	'scheme://username:password@sub.domain.tld:port/path/to?query&key=value#fragment',
 ];
 
 for ( const testString of testStrings ) {
-	const uri = new URI(testString)
-
-	console.log(uri.toString())
-	console.log(uri)
+	// const uri = new URI(testString)
 }
+
+
+
+
+const h = new Hostname('qwe');
+
+console.log(h);
