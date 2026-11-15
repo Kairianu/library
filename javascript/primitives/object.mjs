@@ -1,5 +1,4 @@
 import * as functions from './function.mjs';
-import * as number from './number.mjs';
 import * as string from './string.mjs';
 
 
@@ -96,7 +95,7 @@ export function shouldUseAsKey(value) {
 		return true;
 	}
 
-	if ( number.isRealNumber(value) ) {
+	if ( Number.isFinite(value) ) {
 		return true;
 	}
 
